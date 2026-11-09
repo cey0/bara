@@ -1,0 +1,6 @@
+*.sqlite
+database/*.sqlite
+.env
+.DS_Store
+Thumbs.db
+.freebuff/

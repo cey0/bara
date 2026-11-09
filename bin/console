@@ -1,0 +1,51 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Framework\Database\Connection;
+
+require __DIR__ . '/../bootstrap/autoload.php';
+
+$app = require __DIR__ . '/../bootstrap/app.php';
+$command = $argv[1] ?? 'help';
+
+switch ($command) {
+    case 'migrate':
+        $driver = (string) $app->config()->get('database.driver');
+        $file = $app->basePath('database/schema/' . $driver . '.sql');
+
+        if (! is_file($file)) {
+            fwrite(STDERR, "Schema tidak ditemukan: $file\n");
+            exit(1);
+        }
+
+        $app->container()->make(Connection::class)->pdo()->exec((string) file_get_contents($file));
+        echo "Schema diterapkan dari database/schema/$driver.sql\n";
+        break;
+
+    case 'seed':
+        require $app->basePath('database/seed.php');
+        break;
+
+    case 'serve':
+        $address = $argv[2] ?? 'localhost:8000';
+        $server = escapeshellarg(PHP_BINARY)
+            . ' -S ' . escapeshellarg($address)
+            . ' -t ' . escapeshellarg($app->basePath('public'))
+            . ' ' . escapeshellarg($app->basePath('server.php'));
+
+        echo "Bara development server: http://$address\n";
+        passthru($server);
+        break;
+
+    default:
+        echo <<<TEXT
+        Bara console
+
+          php bin/console migrate        Terapkan schema (database/schema/<driver>.sql)
+          php bin/console seed           Isi data contoh
+          php bin/console serve [addr]   Jalankan server, default localhost:8000
+
+        TEXT;
+}
